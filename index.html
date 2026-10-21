@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="德语发音">
+<meta name="theme-color" content="#2f5d7c">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <title>德语语音综合练习 · 点词发音</title>
 <style>
   :root{
@@ -172,6 +178,50 @@
   }
   .drillAll:active{background:#274c66}
 
+  /* ---------- 听辨训练 ---------- */
+  .quiz{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:14px;box-shadow:var(--shadow)}
+  .quizTop{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--ink2);margin-bottom:12px}
+  .quizTop b{color:var(--blue);font-weight:600}
+  .quizPlay{
+    width:100%;display:flex;align-items:center;justify-content:center;gap:9px;
+    border:1px solid var(--line);background:#f7f4ec;border-radius:10px;
+    padding:15px;cursor:pointer;font:inherit;font-size:15px;color:var(--blue);
+    transition:background .15s,border-color .15s;
+  }
+  .quizPlay:active{background:#eee7d8}
+  .quizPlay.playing{background:#eaf1f6;border-color:var(--blue)}
+  .quizPlay .qpIcon{font-size:13px}
+  .quizOpts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  .qopt{
+    border:1px solid var(--line);background:var(--card);border-radius:10px;
+    padding:14px 8px;font:inherit;font-size:15px;cursor:pointer;color:var(--ink);
+    transition:background .15s,border-color .15s;
+  }
+  .qopt:active{background:#f0ece0}
+  .qopt.right{background:#e6f2ea;border-color:var(--green);color:#245c49}
+  .qopt.wrong{background:#f7e6e2;border-color:var(--red);color:#8e3d2e}
+  .qopt:disabled{cursor:default}
+  .quizFeed{margin-top:11px;font-size:13px;line-height:1.75;min-height:24px;color:var(--ink2)}
+  .quizFeed .de{font-family:Georgia,serif;font-size:15.5px;color:var(--ink)}
+  .quizFeed .ipa{font-family:"Lucida Grande","Arial Unicode MS",sans-serif;font-size:12px;color:var(--ink3)}
+  .quizFeed .ok{color:var(--green);font-weight:600}
+  .quizFeed .bad{color:var(--red);font-weight:600}
+  .quizNext,.quizRestart{
+    width:100%;margin-top:11px;border:0;border-radius:9px;padding:12px;
+    font:inherit;font-size:14px;cursor:pointer;letter-spacing:.04em;
+  }
+  .quizNext{background:var(--blue);color:#fff}
+  .quizNext:active{background:#274c66}
+  .quizRestart{background:#eee7d8;color:var(--ink)}
+  .quizSum{font-size:14px;line-height:1.9;color:var(--ink)}
+  .quizSum b{color:var(--blue);font-size:20px}
+
+  /* ---------- 遮音标自测 ---------- */
+  body.hide-ipa .word .ipa{opacity:0;transition:opacity .18s}
+  body.hide-ipa .word.revealed .ipa{opacity:1}
+  body.hide-ipa .word .ipa:after{content:""}
+  .ipaToggle.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+
   footer{margin:26px 0 0;padding:14px 0 0;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink3);line-height:1.75}
   footer b{color:var(--ink2);font-weight:600}
 
@@ -210,6 +260,7 @@
       <button data-rate="1" class="on">中</button>
       <button data-rate="1.2">快</button>
     </div>
+    <button class="test ipaToggle" id="ipaBtn" aria-pressed="false">遮音标</button>
     <button class="test" id="testBtn">测试</button>
     <button class="stop" id="stopBtn">停止</button>
   </div>
@@ -251,9 +302,30 @@
     </div>
   </section>
 
+  <!-- 听辨训练 -->
+  <section>
+    <div class="secHead"><h2>听辨训练</h2><em>长音 / 短音</em></div>
+    <div class="quiz">
+      <div class="quizTop">
+        <span id="quizProg">第 1 / 10 题</span>
+        <span>答对 <b id="quizScore">0</b></span>
+      </div>
+      <button class="quizPlay" id="quizPlay"><span class="qpIcon">▶</span><span id="quizPlayText">听一听</span></button>
+      <div class="quizOpts" id="quizOpts">
+        <button class="qopt" data-long="1">长音 lang</button>
+        <button class="qopt" data-long="0">短音 kurz</button>
+      </div>
+      <div class="quizFeed" id="quizFeed">点上面的按钮听发音，再判断它是长音还是短音。</div>
+      <button class="quizNext" id="quizNext" style="display:none">下一题 →</button>
+      <button class="quizRestart" id="quizRestart" style="display:none">重新开始</button>
+    </div>
+  </section>
+
   <footer>
     <b>使用说明：</b>点击任意单词即朗读（读的是德语拼写，音标只作参照、不发音）。点每行右侧 ▶ 可先长后短对比连读。<br>
-    <b>发音引擎：</b>57 个词的德语发音由 Anna（de_DE）预先生成，合并为一条音频内嵌在本文件中（约 150 KB），<b>离线可播、不依赖网络</b>，发音必然是德语。个别词缺失时才回退系统语音或在线合成。
+    <b>练习：</b>「听辨训练」随机播放单词，判断长音或短音并即时判分；顶部「遮音标」隐藏音标，先自己读、点词再揭示。<br>
+    <b>发音引擎：</b>57 个词的德语发音由 Anna（de_DE）预先生成，合并为一条音频内嵌在页面中（约 150 KB），<b>离线可播、不依赖网络</b>，发音必然是德语。<br>
+    <b>离线安装：</b>在 Safari / Chrome 中打开后可用「添加到主屏幕」，像 App 一样断网使用。
   </footer>
 </div>
 
@@ -682,6 +754,131 @@
     });
   }
 
+  /* ================= 听辨训练 ================= */
+  var QUIZ_LEN = 10;
+  var quizList = [], quizIdx = 0, quizScore = 0, quizLocked = false;
+
+  function buildQuizPool(){
+    var pool = [], seen = {};
+    function add(word, ipa, isLong){
+      if(!word || seen[word]) return;
+      seen[word] = 1;
+      pool.push({ w: word, ipa: ipa || "", long: isLong });
+    }
+    VOWELS.forEach(function(v){
+      add(v[1], v[2], true);   // 长音词
+      add(v[3], v[4], false);  // 短音词
+    });
+    DIPH.forEach(function(it){
+      if(it[3]){               // ä / ö / ü 长短对比行
+        add(it[2][0][0], it[2][0][1], true);
+        add(it[4][0][0], it[4][0][1], false);
+      }
+    });
+    return pool;
+  }
+
+  function shuffle(arr){
+    for(var i=arr.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var t = arr[i]; arr[i]=arr[j]; arr[j]=t;
+    }
+    return arr;
+  }
+
+  function startQuiz(){
+    var pool = buildQuizPool();
+    quizList = shuffle(pool.slice()).slice(0, Math.min(QUIZ_LEN, pool.length));
+    quizIdx = 0; quizScore = 0; quizLocked = false;
+    document.getElementById("quizRestart").style.display = "none";
+    document.getElementById("quizNext").style.display = "none";
+    renderQuiz();
+  }
+
+  function currentQ(){ return quizList[quizIdx]; }
+
+  function renderQuiz(){
+    var q = currentQ();
+    var prog = document.getElementById("quizProg");
+    var feed = document.getElementById("quizFeed");
+    var opts = document.getElementById("quizOpts");
+    var pb = document.getElementById("quizPlay");
+    var nb = document.getElementById("quizNext");
+
+    if(!q){
+      quizLocked = true;
+      prog.textContent = "已完成";
+      opts.style.display = "none";
+      pb.style.display = "none";
+      nb.style.display = "none";
+      var pct = Math.round(quizScore / quizList.length * 100);
+      var tip = pct >= 80 ? "长短音已经听得很准了。"
+              : (pct >= 50 ? "有进步，重点再体会短音的急促和截断感。"
+              : "建议回到模块一，先用「慢」速跟读几遍长短音对比。");
+      feed.innerHTML = '<div class="quizSum">本轮 ' + quizList.length + ' 题，答对 <b>' + quizScore +
+                       '</b> 题（' + pct + '%）。<br>' + tip + '</div>';
+      document.getElementById("quizRestart").style.display = "block";
+      return;
+    }
+
+    quizLocked = false;
+    prog.textContent = "第 " + (quizIdx + 1) + " / " + quizList.length + " 题";
+    document.getElementById("quizScore").textContent = quizScore;
+    pb.style.display = "flex";
+    pb.classList.remove("playing");
+    document.getElementById("quizPlayText").textContent = "听一听";
+    opts.style.display = "grid";
+    Array.prototype.forEach.call(opts.querySelectorAll(".qopt"), function(b){
+      b.disabled = false;
+      b.classList.remove("right", "wrong");
+    });
+    feed.textContent = "点上面的按钮听发音，再判断它是长音还是短音。";
+    nb.style.display = "none";
+  }
+
+  function playQuizWord(){
+    var q = currentQ();
+    if(!q) return;
+    var pb = document.getElementById("quizPlay");
+    pb.classList.add("playing");
+    document.getElementById("quizPlayText").textContent = "播放中…";
+    playSequence([{ text: q.w, el: null, gap: 0 }]).then(function(){
+      pb.classList.remove("playing");
+      document.getElementById("quizPlayText").textContent = "再听一次";
+    });
+  }
+
+  function answerQuiz(isLong){
+    if(quizLocked) return;
+    var q = currentQ();
+    if(!q) return;
+    quizLocked = true;
+    var correct = (isLong === q.long);
+    if(correct) quizScore++;
+    document.getElementById("quizScore").textContent = quizScore;
+
+    var opts = document.getElementById("quizOpts");
+    Array.prototype.forEach.call(opts.querySelectorAll(".qopt"), function(b){
+      b.disabled = true;
+      var v = b.getAttribute("data-long") === "1";
+      if(v === q.long) b.classList.add("right");
+      else if(v === isLong) b.classList.add("wrong");
+    });
+
+    document.getElementById("quizFeed").innerHTML =
+      (correct ? '<span class="ok">✓ 正确</span>' : '<span class="bad">✗ 不对</span>') +
+      ' · <span class="de">' + q.w + '</span> <span class="ipa">' + q.ipa + '</span> 是' +
+      (q.long ? "长音" : "短音");
+    var nb = document.getElementById("quizNext");
+    nb.style.display = "block";
+    nb.textContent = (quizIdx + 1 >= quizList.length) ? "看结果 →" : "下一题 →";
+  }
+
+  function nextQuiz(){
+    quizIdx++;
+    renderQuiz();
+  }
+
   /* ================= 事件 ================= */
   // 任何点击都先唤醒可能被浏览器挂起的语音引擎（解决“首次点击无声”）
   document.addEventListener("click", function(){ if(synth){ try{ synth.resume(); }catch(e){} } }, true);
@@ -692,6 +889,8 @@
     if(!deVoice) loadVoices();
     var text = w.getAttribute("data-say");
     if(!text) return;
+    // 遮音标模式下，点词才揭示该词音标
+    if(document.body.classList.contains("hide-ipa")) w.classList.add("revealed");
     playSequence([{ text: text, el: w, gap: 0 }]);
   });
 
@@ -718,6 +917,29 @@
     playSequence(tasks);
   });
 
+  // 听辨训练
+  document.getElementById("quizPlay").addEventListener("click", playQuizWord);
+  document.getElementById("quizOpts").addEventListener("click", function(e){
+    var b = e.target.closest ? e.target.closest(".qopt") : null;
+    if(!b || b.disabled) return;
+    answerQuiz(b.getAttribute("data-long") === "1");
+  });
+  document.getElementById("quizNext").addEventListener("click", nextQuiz);
+  document.getElementById("quizRestart").addEventListener("click", startQuiz);
+
+  // 遮音标自测
+  document.getElementById("ipaBtn").addEventListener("click", function(){
+    var on = document.body.classList.toggle("hide-ipa");
+    this.classList.toggle("on", on);
+    this.setAttribute("aria-pressed", on ? "true" : "false");
+    this.textContent = on ? "显示音标" : "遮音标";
+    if(!on){
+      Array.prototype.forEach.call(document.querySelectorAll(".word.revealed"), function(x){
+        x.classList.remove("revealed");
+      });
+    }
+  });
+
   document.getElementById("testBtn").addEventListener("click", function(){
     recordDiag("▶ 发音测试", "", true);
     recordDiag("内嵌德语词条：" + AUDIO_COUNT + " 个 · Haus " + (SPRITE_INDEX["Haus"] ? "有" : "无"), "", true);
@@ -737,6 +959,7 @@
   renderDiph();
   renderCons();
   renderDrill();
+  startQuiz();
 
   if(AUDIO_COUNT){
     setStatus("ok","德语发音就绪 · " + AUDIO_COUNT + " 词内嵌音频（离线可播）");
@@ -756,6 +979,13 @@
       setStatus("warn","此环境不支持系统语音，已启用在线发音");
       showBanner();
     }
+  }
+
+  // PWA：注册 Service Worker（仅 http/https 生效，file:// 打开时自动跳过）
+  if("serviceWorker" in navigator && /^https?:$/.test(location.protocol)){
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("sw.js").catch(function(){});
+    });
   }
 })();
 </script>
