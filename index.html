@@ -10,6 +10,18 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<script>
+  /* 分享链接带 ?sharecode= 鉴权时，浏览器请求 manifest / sw.js 等子资源不会携带该参数（会 403）。
+     此时移除 manifest 且不注册 Service Worker，避免安装出打不开的主屏图标、或写入不完整的离线缓存。
+     PWA 仅在无鉴权的静态托管（如 GitHub Pages）上生效。 */
+  (function(){
+    if(/[?&]sharecode=/.test(location.search || "")){
+      window.__NO_PWA__ = true;
+      var m = document.querySelector('link[rel="manifest"]');
+      if(m && m.parentNode) m.parentNode.removeChild(m);
+    }
+  })();
+</script>
 <title>德语语音综合练习 · 点词发音</title>
 <style>
   :root{
@@ -325,7 +337,7 @@
     <b>使用说明：</b>点击任意单词即朗读（读的是德语拼写，音标只作参照、不发音）。点每行右侧 ▶ 可先长后短对比连读。<br>
     <b>练习：</b>「听辨训练」随机播放单词，判断长音或短音并即时判分；顶部「遮音标」隐藏音标，先自己读、点词再揭示。<br>
     <b>发音引擎：</b>57 个词的德语发音由 Anna（de_DE）预先生成，合并为一条音频内嵌在页面中（约 150 KB），<b>离线可播、不依赖网络</b>，发音必然是德语。<br>
-    <b>离线安装：</b>在 Safari / Chrome 中打开后可用「添加到主屏幕」，像 App 一样断网使用。
+    <b>离线安装：</b>用 Safari / Chrome 打开本页可「添加到主屏幕」，首次加载后断网可用。分享链接带鉴权参数时该功能不可用（其余功能不受影响），可用 GitHub Pages 版安装。
   </footer>
 </div>
 
@@ -981,8 +993,8 @@
     }
   }
 
-  // PWA：注册 Service Worker（仅 http/https 生效，file:// 打开时自动跳过）
-  if("serviceWorker" in navigator && /^https?:$/.test(location.protocol)){
+  // PWA：注册 Service Worker（仅 http/https 且不带 sharecode 鉴权时生效）
+  if(!window.__NO_PWA__ && "serviceWorker" in navigator && /^https?:$/.test(location.protocol)){
     window.addEventListener("load", function(){
       navigator.serviceWorker.register("sw.js").catch(function(){});
     });
